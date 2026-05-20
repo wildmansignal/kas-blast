@@ -1184,13 +1184,63 @@ document.querySelectorAll('[data-tradetab]').forEach(b => {
 });
 
 // ---------- wallet ----------
+// EIP-6963 multi-wallet discovery: enumerate all installed wallets so the
+// user can pick (instead of hoping whichever wallet won the window.ethereum
+// race is the one they wanted).
+const discoveredWallets = []; // { info: {uuid, name, icon, rdns}, provider: EIP1193 }
+window.addEventListener('eip6963:announceProvider', (event) => {
+  const detail = event.detail;
+  if (!discoveredWallets.find(w => w.info.uuid === detail.info.uuid)) {
+    discoveredWallets.push(detail);
+  }
+});
+window.dispatchEvent(new Event('eip6963:requestProvider'));
+
+function pickWalletUI() {
+  return new Promise((resolve) => {
+    // Refresh in case wallets announced after first request
+    window.dispatchEvent(new Event('eip6963:requestProvider'));
+    setTimeout(() => {
+      if (discoveredWallets.length === 0) {
+        // No EIP-6963 wallets — fall back to legacy window.ethereum
+        if (window.ethereum) return resolve({ provider: window.ethereum, name: 'Injected wallet' });
+        return resolve(null);
+      }
+      if (discoveredWallets.length === 1) {
+        return resolve({ provider: discoveredWallets[0].provider, name: discoveredWallets[0].info.name });
+      }
+      // Multiple — show a picker
+      const bg = document.createElement('div');
+      bg.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;';
+      const box = document.createElement('div');
+      box.style.cssText = 'background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; max-width:380px; width:100%; box-shadow:0 0 0 1px var(--cyan-soft), 0 20px 60px -20px var(--cyan-glow);';
+      box.innerHTML = `<h3 style="margin:0 0 14px; font-size:16px; color:var(--text)">Choose a wallet</h3><div id="wpick"></div><button id="wcancel" class="btn ghost" style="margin-top:8px; width:100%;">Cancel</button>`;
+      bg.appendChild(box);
+      document.body.appendChild(bg);
+      const list = box.querySelector('#wpick');
+      discoveredWallets.forEach(w => {
+        const b = document.createElement('button');
+        b.style.cssText = 'display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; margin-bottom:8px; cursor:pointer; color:var(--text); font-family:inherit; font-size:14px;';
+        b.innerHTML = `<img src="${w.info.icon}" style="width:28px; height:28px; border-radius:6px;"/>${escapeText(w.info.name)}`;
+        b.onmouseenter = () => b.style.borderColor = 'var(--cyan-2)';
+        b.onmouseleave = () => b.style.borderColor = 'var(--line)';
+        b.onclick = () => { document.body.removeChild(bg); resolve({ provider: w.provider, name: w.info.name }); };
+        list.appendChild(b);
+      });
+      box.querySelector('#wcancel').onclick = () => { document.body.removeChild(bg); resolve(null); };
+    }, 100);
+  });
+}
+
 async function connectWallet() {
-  if (!window.ethereum) {
-    toast('No injected wallet detected. Install MetaMask or Kasware.', true);
+  const picked = await pickWalletUI();
+  if (!picked) {
+    toast('No injected wallet detected. Install MetaMask, Kasware, Rabby, etc.', true);
     return;
   }
   try {
-    provider = new ethers.BrowserProvider(window.ethereum);
+    toast('Connecting to ' + picked.name + '…');
+    provider = new ethers.BrowserProvider(picked.provider);
     const accs = await provider.send('eth_requestAccounts', []);
     account = accs[0];
     signer = await provider.getSigner();
@@ -1199,14 +1249,14 @@ async function connectWallet() {
     document.getElementById('netLabel').textContent = 'chain ' + Number(net.chainId);
     if (Number(net.chainId) !== settings.chainId) {
       try {
-        await window.ethereum.request({
+        await picked.provider.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: '0x' + settings.chainId.toString(16) }],
         });
       } catch (e) {
         const isLocal = settings.chainId === 31337;
         try {
-          await window.ethereum.request({
+          await picked.provider.request({
             method: 'wallet_addEthereumChain',
             params: [{
               chainId: '0x' + settings.chainId.toString(16),
