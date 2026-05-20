@@ -1,0 +1,17 @@
+# Only deploy the dApp UI. Everything below is dev-only and shouldn't ship.
+node_modules
+artifacts
+cache
+typechain-types
+contracts
+scripts
+test
+hardhat.config.ts
+tsconfig.json
+package.json
+package-lock.json
+.env
+.env.example
+.git
+.gitignore
+.DS_Store

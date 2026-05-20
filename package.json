@@ -1,0 +1,20 @@
+{
+  "name": "slop-pump",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "node:fork": "FORK_KASPLEX=1 hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:kasplex-testnet": "hardhat run scripts/deploy.ts --network kasplexL2",
+    "deploy:kasplex-mainnet": "hardhat run scripts/deploy.ts --network kasplexMainnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.10"
+  }
+}
