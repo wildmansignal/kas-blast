@@ -49,6 +49,19 @@ In [PumpFactory.sol](contracts/PumpFactory.sol):
 
 Initial price ≈ 28,000 / 1,073,000,000 ≈ **2.6e-5 KAS / token**. Adjust if KAS price moves a lot.
 
+## Contract verification
+
+The Solidity source is **fully public** in [`contracts/`](contracts/). Anyone can read it, audit it, and re-compile the bytecode to confirm it matches what's deployed at `0xff5A8D53fF7518fD0Dc3582b2FE1FeF8FDCF9fAB` on Kasplex L2 mainnet.
+
+As of May 2026, **Kasplex's Blockscout explorer does not yet expose a public verification API** (both `/api` and `/api/v2` endpoints return 404). The `etherscan` config in `hardhat.config.ts` is pre-wired — once Kasplex publishes the endpoint, run:
+
+```bash
+npx hardhat verify --network kasplexMainnet 0xff5A8D53fF7518fD0Dc3582b2FE1FeF8FDCF9fAB \
+  "0xAd7991700167FebC845fc70ADf16eC7fC866052B" \
+  "0x2c2Ae87Ba178F48637acAe54B87c3924F544a83e" \
+  "0x4373b7Fcf5059A785843cD224129e01d243Aef71"
+```
+
 ## What's missing for prod
 
 - **LP migration** on graduation — `complete=true` just locks the curve; you still need to call out to a Kasplex DEX (Uniswap V2 fork) and seed the pool with the remaining `realKasReserve` + `realTokenReserve`. Stub the migrator separately.

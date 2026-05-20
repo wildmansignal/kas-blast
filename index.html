@@ -4,6 +4,27 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>KAS BLAST — Launch & Trade Memecoins on Kaspa</title>
+<meta name="description" content="Launch and trade memecoins on Kasplex L2 (Kaspa's EVM). Bonding curves, atomic dev-buys, auto-LP migration to KrokoSwap. Rug-proof, immutable, no admin keys." />
+<meta name="theme-color" content="#06070d" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="KAS BLAST" />
+<meta property="og:title" content="KAS BLAST — Launch & Trade Memecoins on Kaspa" />
+<meta property="og:description" content="pump.fun on Kasplex L2. Bonding curves, atomic dev-buys, LP burned forever on graduation. No rugs." />
+<meta property="og:url" content="https://kasblast.com" />
+<meta property="og:image" content="https://image.pollinations.ai/prompt/KAS%20BLAST%20cyan%20neon%20rocket%20memecoin%20launchpad%20banner%20vaporwave%20kaspa?width=1200&height=630&seed=42&nologo=true" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="KAS BLAST — Launch & Trade Memecoins on Kaspa" />
+<meta name="twitter:description" content="pump.fun on Kasplex L2. Bonding curves. LP burned forever. No rugs." />
+<meta name="twitter:image" content="https://image.pollinations.ai/prompt/KAS%20BLAST%20cyan%20neon%20rocket%20memecoin%20launchpad%20banner%20vaporwave%20kaspa?width=1200&height=630&seed=42&nologo=true" />
+
+<!-- Favicon: tiny inline SVG so no extra file needed -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2306b6d4'/%3E%3Ctext x='50%25' y='50%25' dy='.35em' text-anchor='middle' font-family='Inter,sans-serif' font-weight='900' font-size='38' fill='%2306070d'%3EK%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -605,6 +626,66 @@
   }
   .stat-card .v.small { font-size: 12px; }
   .stat-card .v.cyan { color: var(--cyan); }
+  .copyable {
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 22px;
+    transition: color .15s;
+  }
+  .copyable:hover { color: var(--cyan); }
+  .copyable::after {
+    content: '📋';
+    font-size: 11px;
+    opacity: 0.5;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .copyable:hover::after { opacity: 1; }
+  .copyable.copied::after { content: '✓'; color: var(--up); opacity: 1; }
+
+  /* Live trades feed */
+  .trade-row {
+    display: grid;
+    grid-template-columns: 16px 1fr auto auto 80px;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .trade-row:hover { background: var(--panel-2); }
+  .trade-row:last-child { border-bottom: none; }
+  .trade-row .side {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: bold;
+  }
+  .trade-row .side.buy { background: rgba(74,222,128,0.2); color: var(--up); }
+  .trade-row .side.sell { background: rgba(248,113,113,0.2); color: var(--down); }
+  .trade-row .coin-link { color: var(--cyan); font-weight: 600; }
+  .trade-row .trader { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .trade-row .amount { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .trade-row .when { color: var(--text-dim); font-size: 11px; text-align: right; }
+
+  .sortBtn { background: var(--panel-2); color: var(--text-mid); border: 1px solid var(--line); }
+  .sortBtn:hover { color: var(--cyan); border-color: var(--cyan-2); }
+  .sortBtn.active { color: var(--cyan); background: var(--cyan-soft); border-color: var(--cyan-2); }
+
+  .coin .vol-badge {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--up);
+    font-family: 'JetBrains Mono', monospace;
+  }
 
   /* Trade rail */
   .trade-rail {
@@ -811,8 +892,13 @@
         </div>
 
         <div class="section-head">
-          <h3>↗ Recent launches</h3>
-          <button class="btn ghost sm" id="refreshBtn">↻ Refresh</button>
+          <h3 id="gridHead">↗ Recent launches</h3>
+          <div style="display:flex; gap:6px;">
+            <button class="btn ghost sm sortBtn active" data-sort="new">Newest</button>
+            <button class="btn ghost sm sortBtn" data-sort="volume">🔥 Volume 24h</button>
+            <button class="btn ghost sm sortBtn" data-sort="progress">📈 Progress</button>
+            <button class="btn ghost sm" id="refreshBtn">↻</button>
+          </div>
         </div>
         <div id="coinGrid" class="grid">
           <div class="empty">No coins yet. Be the first to launch.</div>
@@ -860,9 +946,12 @@
       <section id="view-live" class="view">
         <div class="section-head">
           <h3>⚡ Live trades</h3>
+          <span class="small" id="liveStatus">connecting…</span>
         </div>
-        <div class="card">
-          <div id="liveFeed" class="empty">Listening for trades… open a coin to see candles.</div>
+        <div class="card" style="padding: 0;">
+          <div id="liveFeed" style="max-height: 70vh; overflow-y: auto;">
+            <div class="empty" style="border: none;">listening for trades across all coins…</div>
+          </div>
         </div>
       </section>
 
@@ -945,8 +1034,8 @@
             <div class="stats-grid">
               <div class="stat-card"><div class="k">Price</div><div class="v mono cyan" id="mPrice">—</div></div>
               <div class="stat-card"><div class="k">Tokens on curve</div><div class="v mono" id="mTokenLeft">—</div></div>
-              <div class="stat-card"><div class="k">Token</div><div class="v mono small" id="mToken">—</div></div>
-              <div class="stat-card"><div class="k">Curve</div><div class="v mono small" id="mCurve">—</div></div>
+              <div class="stat-card"><div class="k">Token</div><div class="v mono small copyable" id="mToken" title="Click to copy full address">—</div></div>
+              <div class="stat-card"><div class="k">Curve</div><div class="v mono small copyable" id="mCurve" title="Click to copy full address">—</div></div>
             </div>
           </div>
 
@@ -1099,6 +1188,17 @@ function toEther(wei) { return Number(ethers.formatEther(wei)); }
 function escapeText(s) { return String(s || '').replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])); }
 function escapeAttr(s) { return escapeText(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
 
+async function copyToClipboard(el, text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    el.classList.add('copied');
+    toast('Copied: ' + short(text));
+    setTimeout(() => el.classList.remove('copied'), 1500);
+  } catch {
+    toast('Copy failed — select manually', true);
+  }
+}
+
 // ---------- router ----------
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -1112,6 +1212,7 @@ function showView(name) {
 
 async function route() {
   const hash = (location.hash || '#/').replace(/^#\//, '');
+  stopLiveFeed();
   if (hash.startsWith('coin/')) {
     const addr = hash.slice(5);
     showView('coin');
@@ -1119,8 +1220,13 @@ async function route() {
     return;
   }
   if (chartLiveCleanup) { chartLiveCleanup(); chartLiveCleanup = null; }
+  if (hash === 'live') {
+    showView('live');
+    startLiveFeed();
+    return;
+  }
   if (hash === '' || hash === '/') return showView('home');
-  if (['launch', 'live', 'settings', 'home'].includes(hash)) return showView(hash);
+  if (['launch', 'settings', 'home'].includes(hash)) return showView(hash);
   showView('home');
 }
 window.addEventListener('hashchange', route);
@@ -1322,7 +1428,7 @@ async function loadCoins() {
     const list = await ro.recentCoins(0, 60);
     const enriched = await Promise.all(list.map(enrichCoin));
     allCoins = enriched.filter(Boolean);
-    renderCoins(allCoins);
+    applySort();
   } catch (e) {
     grid.innerHTML = '<div class="empty">Failed to load coins: ' + e.message + '</div>';
   }
@@ -1337,8 +1443,55 @@ async function enrichCoin(c) {
     const [name, sym, img, desc, progress] = await Promise.all([
       tokenC.name(), tokenC.symbol(), tokenC.imageUri(), tokenC.description(), curveC.progressBps()
     ]);
-    return { token: c.token, curve: c.curve, creator: c.creator, name, symbol: sym, imageUri: img, description: desc, progress: Number(progress) };
-  } catch { return { token: c.token, curve: c.curve, creator: c.creator, name: '?', symbol: '?', imageUri: '', description: '', progress: 0 }; }
+    return {
+      token: c.token, curve: c.curve, creator: c.creator,
+      createdAt: Number(c.createdAt),
+      name, symbol: sym, imageUri: img, description: desc,
+      progress: Number(progress),
+      vol24h: 0, // backfilled below if user clicks Volume sort
+    };
+  } catch { return { token: c.token, curve: c.curve, creator: c.creator, name: '?', symbol: '?', imageUri: '', description: '', progress: 0, vol24h: 0 }; }
+}
+
+/// Computes 24h KAS volume per coin by querying Buy + Sell event logs across all curves
+/// in one getLogs call, then summing per-curve. Caches the result.
+let vol24Cache = 0;
+async function ensure24hVolumes() {
+  if (Date.now() - vol24Cache < 60_000) return; // cached for 1 min
+  const ro = readProvider || provider;
+  if (!ro || allCoins.length === 0) return;
+  try {
+    const latest = await ro.getBlockNumber();
+    // Kasplex L2 ~1s blocks → 24h ≈ 86,400 blocks. Cap at 100k to be safe.
+    const fromBlock = Math.max(0, latest - 100_000);
+    const buyTopic  = ethers.id('Buy(address,uint256,uint256,uint256)');
+    const sellTopic = ethers.id('Sell(address,uint256,uint256,uint256)');
+    const logs = await ro.getLogs({
+      address: allCoins.map(c => c.curve),
+      topics: [[buyTopic, sellTopic]],
+      fromBlock, toBlock: latest,
+    });
+    const iface = new ethers.Interface(CURVE_ABI);
+    // Need block timestamps to filter to last 24h
+    const blockNos = [...new Set(logs.map(l => l.blockNumber))];
+    const blocks = await Promise.all(blockNos.map(bn => ro.getBlock(bn)));
+    const tsMap = new Map(blocks.filter(Boolean).map(b => [b.number, b.timestamp]));
+    const cutoff = Math.floor(Date.now()/1000) - 86_400;
+    const volByCurve = new Map();
+    for (const log of logs) {
+      const ts = tsMap.get(log.blockNumber);
+      if (!ts || ts < cutoff) continue;
+      const parsed = iface.parseLog(log);
+      const amt = parsed.name === 'Buy' ? parsed.args.kasIn : parsed.args.kasOut;
+      const key = log.address.toLowerCase();
+      volByCurve.set(key, (volByCurve.get(key) || 0n) + amt);
+    }
+    for (const c of allCoins) {
+      const v = volByCurve.get(c.curve.toLowerCase()) || 0n;
+      c.vol24h = Number(ethers.formatEther(v));
+    }
+    vol24Cache = Date.now();
+  } catch (e) { console.warn('24h vol query failed', e); }
 }
 
 function renderCoins(coins) {
@@ -1354,11 +1507,13 @@ function renderCoins(coins) {
 function coinCard(c) {
   const el = document.createElement('div');
   el.className = 'coin';
+  const volBadge = c.vol24h > 0 ? `<div class="vol-badge">🔥 ${fmt(c.vol24h, 2)} KAS / 24h</div>` : '';
   el.innerHTML = `
     <div class="img" style="${c.imageUri ? `background-image:url('${escapeAttr(c.imageUri)}')` : ''}">${c.imageUri ? '' : 'no img'}</div>
     <div class="name">${escapeText(c.name)}</div>
     <div class="sym">$${escapeText(c.symbol)}</div>
     <div class="desc">${escapeText(c.description)}</div>
+    ${volBadge}
     <div class="progress-wrap"><div class="progress" style="width:${c.progress/100}%"></div></div>
     <div class="coin-progress-pct"><span>graduation</span><span class="v">${(c.progress/100).toFixed(1)}%</span></div>
   `;
@@ -1366,11 +1521,43 @@ function coinCard(c) {
   return el;
 }
 
-function filterCoins() {
-  const q = document.getElementById('searchInput').value.trim().toLowerCase();
-  if (!q) return renderCoins(allCoins);
-  renderCoins(allCoins.filter(c => (c.name || '').toLowerCase().includes(q) || (c.symbol || '').toLowerCase().includes(q)));
+let coinSort = 'new'; // 'new' | 'volume' | 'progress'
+
+async function applySort() {
+  const sorted = [...allCoins];
+  if (coinSort === 'volume') {
+    await ensure24hVolumes();
+    sorted.sort((a, b) => (b.vol24h || 0) - (a.vol24h || 0));
+  } else if (coinSort === 'progress') {
+    sorted.sort((a, b) => (b.progress || 0) - (a.progress || 0));
+  } else {
+    sorted.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+  renderCoins(applyFilter(sorted));
 }
+
+function applyFilter(list) {
+  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  if (!q) return list;
+  return list.filter(c => (c.name || '').toLowerCase().includes(q) || (c.symbol || '').toLowerCase().includes(q));
+}
+
+function filterCoins() { applySort(); }
+
+document.querySelectorAll('.sortBtn').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.sortBtn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    coinSort = b.dataset.sort;
+    const head = document.getElementById('gridHead');
+    if (head) {
+      head.textContent = coinSort === 'volume' ? '🔥 Trending (24h volume)'
+                       : coinSort === 'progress' ? '📈 Closest to graduation'
+                       : '↗ Newest launches';
+    }
+    applySort();
+  };
+});
 
 // ---------- launch ----------
 async function launchCoin() {
@@ -1436,9 +1623,25 @@ async function openTrade(coin) {
   document.getElementById('mName').textContent = coin.name;
   document.getElementById('mSym').textContent = '$' + coin.symbol;
   document.getElementById('mDesc').textContent = coin.description;
-  document.getElementById('mCurve').textContent = short(coin.curve);
-  document.getElementById('mToken').textContent = short(coin.token);
-  document.getElementById('mCurveFull').textContent = coin.curve;
+
+  // Address stat cards: display truncated but copy full
+  const curveEl = document.getElementById('mCurve');
+  curveEl.textContent = short(coin.curve);
+  curveEl.dataset.copy = coin.curve;
+  curveEl.onclick = () => copyToClipboard(curveEl, coin.curve);
+
+  const tokenEl = document.getElementById('mToken');
+  tokenEl.textContent = short(coin.token);
+  tokenEl.dataset.copy = coin.token;
+  tokenEl.onclick = () => copyToClipboard(tokenEl, coin.token);
+
+  // Sidebar curve contract row in trade rail (full address)
+  const fullEl = document.getElementById('mCurveFull');
+  fullEl.textContent = coin.curve;
+  fullEl.classList.add('copyable');
+  fullEl.title = 'Click to copy';
+  fullEl.style.cursor = 'pointer';
+  fullEl.onclick = () => copyToClipboard(fullEl, coin.curve);
 
   refreshCurve();
   loadChartFor(coin);
@@ -1697,6 +1900,154 @@ document.querySelectorAll('.interval-tab').forEach(b => {
     rebuildChart();
   };
 });
+
+// ---------- live trades feed ----------
+let liveTimer = null;
+let liveLastBlock = 0;
+const liveSeen = new Set();
+const liveCoinMap = new Map(); // curveLower → {symbol, name, curve}
+const liveRows = []; // newest first
+
+async function startLiveFeed() {
+  stopLiveFeed();
+  const status = document.getElementById('liveStatus');
+  const feed = document.getElementById('liveFeed');
+  const ro = readProvider || provider;
+  if (!ro || !settings.factory) { status.textContent = 'no RPC'; return; }
+
+  status.textContent = 'loading coins…';
+  // Refresh coin list to make sure we know all curves
+  if (allCoins.length === 0) await loadCoins();
+  if (allCoins.length === 0) { status.textContent = 'no coins yet'; return; }
+
+  liveCoinMap.clear();
+  for (const c of allCoins) {
+    liveCoinMap.set(c.curve.toLowerCase(), c);
+  }
+  const curveAddrs = allCoins.map(c => c.curve);
+
+  // Backfill last ~10000 blocks
+  status.textContent = 'fetching recent trades…';
+  const latest = await ro.getBlockNumber();
+  const fromBlock = Math.max(0, latest - 10000);
+  liveLastBlock = latest;
+  try {
+    const buyTopic  = ethers.id('Buy(address,uint256,uint256,uint256)');
+    const sellTopic = ethers.id('Sell(address,uint256,uint256,uint256)');
+    const logs = await ro.getLogs({
+      address: curveAddrs,
+      topics: [[buyTopic, sellTopic]],
+      fromBlock, toBlock: latest,
+    });
+    const iface = new ethers.Interface(CURVE_ABI);
+    // Need timestamps — fetch unique blocks
+    const blockNos = [...new Set(logs.map(l => l.blockNumber))];
+    const blocks = await Promise.all(blockNos.map(bn => ro.getBlock(bn)));
+    const tsMap = new Map(blocks.filter(Boolean).map(b => [b.number, b.timestamp]));
+    for (const log of logs) {
+      const parsed = iface.parseLog(log);
+      addLiveRow({
+        txHash: log.transactionHash,
+        curve: log.address,
+        side: parsed.name.toLowerCase(),
+        trader: parsed.args.trader,
+        kasAmount: parsed.name === 'Buy' ? parsed.args.kasIn : parsed.args.kasOut,
+        ts: tsMap.get(log.blockNumber) || Math.floor(Date.now()/1000),
+      });
+    }
+  } catch (e) {
+    console.error('backfill failed', e);
+  }
+
+  renderLiveFeed();
+  status.textContent = liveRows.length + ' trades · polling';
+
+  // Poll every 8s
+  liveTimer = setInterval(() => pollLive(curveAddrs), 8000);
+}
+
+async function pollLive(curveAddrs) {
+  const ro = readProvider || provider;
+  if (!ro) return;
+  try {
+    const latest = await ro.getBlockNumber();
+    if (latest <= liveLastBlock) return;
+    const buyTopic  = ethers.id('Buy(address,uint256,uint256,uint256)');
+    const sellTopic = ethers.id('Sell(address,uint256,uint256,uint256)');
+    const logs = await ro.getLogs({
+      address: curveAddrs,
+      topics: [[buyTopic, sellTopic]],
+      fromBlock: liveLastBlock + 1, toBlock: latest,
+    });
+    liveLastBlock = latest;
+    if (logs.length === 0) return;
+    const iface = new ethers.Interface(CURVE_ABI);
+    const blockNos = [...new Set(logs.map(l => l.blockNumber))];
+    const blocks = await Promise.all(blockNos.map(bn => ro.getBlock(bn)));
+    const tsMap = new Map(blocks.filter(Boolean).map(b => [b.number, b.timestamp]));
+    let added = 0;
+    for (const log of logs) {
+      const parsed = iface.parseLog(log);
+      if (addLiveRow({
+        txHash: log.transactionHash,
+        curve: log.address,
+        side: parsed.name.toLowerCase(),
+        trader: parsed.args.trader,
+        kasAmount: parsed.name === 'Buy' ? parsed.args.kasIn : parsed.args.kasOut,
+        ts: tsMap.get(log.blockNumber) || Math.floor(Date.now()/1000),
+      })) added++;
+    }
+    if (added > 0) renderLiveFeed();
+    const status = document.getElementById('liveStatus');
+    if (status) status.textContent = liveRows.length + ' trades · polling';
+  } catch (e) { console.warn('poll failed', e); }
+}
+
+function addLiveRow(r) {
+  const key = r.txHash + ':' + r.side;
+  if (liveSeen.has(key)) return false;
+  liveSeen.add(key);
+  liveRows.unshift(r);
+  if (liveRows.length > 200) liveRows.length = 200;
+  return true;
+}
+
+function relTime(ts) {
+  const d = Math.floor(Date.now()/1000) - ts;
+  if (d < 60) return d + 's ago';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
+}
+
+function renderLiveFeed() {
+  const feed = document.getElementById('liveFeed');
+  if (!feed) return;
+  if (liveRows.length === 0) {
+    feed.innerHTML = '<div class="empty" style="border:none;">no trades in the last 10000 blocks</div>';
+    return;
+  }
+  feed.innerHTML = '';
+  for (const r of liveRows) {
+    const coin = liveCoinMap.get(r.curve.toLowerCase());
+    const sym = coin ? coin.symbol : '?';
+    const row = document.createElement('div');
+    row.className = 'trade-row';
+    row.innerHTML = `
+      <div class="side ${r.side}">${r.side === 'buy' ? 'B' : 'S'}</div>
+      <div><span class="coin-link">$${escapeText(sym)}</span> <span class="trader">${short(r.trader)}</span></div>
+      <div class="amount">${r.side === 'buy' ? '+' : '−'}${fmt(toEther(r.kasAmount), 3)} KAS</div>
+      <div></div>
+      <div class="when">${relTime(r.ts)}</div>
+    `;
+    row.onclick = () => { if (coin) location.hash = '#/coin/' + coin.curve; };
+    feed.appendChild(row);
+  }
+}
+
+function stopLiveFeed() {
+  if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+}
 
 // ---------- boot ----------
 bootRead();

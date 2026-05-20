@@ -32,6 +32,27 @@ const config: HardhatUserConfig = {
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
   },
+  // Etherscan-compatible contract verification.
+  // As of May 2026, explorer.kasplex.org does NOT publicly expose the Blockscout
+  // verification API endpoints — both /api and /api/v2 paths 404. Once Kasplex
+  // publishes their verification API, set apiURL below and run:
+  //   npx hardhat verify --network kasplexMainnet 0xff5A8D53fF7518fD0Dc3582b2FE1FeF8FDCF9fAB \
+  //     "0xAd7991700167FebC845fc70ADf16eC7fC866052B" \
+  //     "0x2c2Ae87Ba178F48637acAe54B87c3924F544a83e" \
+  //     "0x4373b7Fcf5059A785843cD224129e01d243Aef71"
+  etherscan: {
+    apiKey: { kasplexMainnet: 'no-api-key-needed' },
+    customChains: [
+      {
+        network: 'kasplexMainnet',
+        chainId: 202555,
+        urls: {
+          apiURL: 'https://explorer.kasplex.org/api',        // ← update when Kasplex publishes
+          browserURL: 'https://explorer.kasplex.org',
+        },
+      },
+    ],
+  },
 };
 
 export default config;
