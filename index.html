@@ -1047,8 +1047,31 @@
               <input id="lSym" placeholder="PEPEW" maxlength="10" class="mono"/>
             </div>
             <div class="field">
-              <label>Image URL</label>
-              <input id="lImg" placeholder="https://… or ipfs://…"/>
+              <label>Coin image</label>
+              <div class="tab-row" style="margin-bottom: 8px;">
+                <button type="button" class="tab img-tab active" data-imgtab="ai">🤖 AI Generate</button>
+                <button type="button" class="tab img-tab" data-imgtab="url">🔗 Paste URL</button>
+              </div>
+
+              <!-- AI mode -->
+              <div id="imgmode-ai">
+                <div style="display: flex; gap: 6px;">
+                  <input id="lImgPrompt" placeholder="cyborg pepe with kaspa cape, neon"/>
+                  <button type="button" id="lImgGen" class="btn ghost sm" style="flex-shrink: 0;">Generate</button>
+                </div>
+                <div class="small" style="margin-top: 6px;">Free AI art via pollinations. Click Generate to roll a new seed.</div>
+              </div>
+
+              <!-- URL mode -->
+              <div id="imgmode-url" style="display: none;">
+                <input id="lImgUrl" placeholder="https://… or ipfs://…"/>
+              </div>
+
+              <!-- shared preview + the actual hidden field that gets sent on launch -->
+              <div id="lImgPreview" style="display: none; margin-top: 10px;">
+                <div style="width: 96px; height: 96px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-3) center/cover no-repeat;" id="lImgPreviewBox"></div>
+              </div>
+              <input type="hidden" id="lImg"/>
             </div>
             <div class="field">
               <label>Description</label>
@@ -1438,6 +1461,42 @@ document.querySelectorAll('[data-tradetab]').forEach(b => {
   };
 });
 
+// ---------- launch form: image tabs (AI / URL) ----------
+document.querySelectorAll('[data-imgtab]').forEach(b => {
+  b.onclick = (e) => {
+    e.preventDefault();
+    document.querySelectorAll('[data-imgtab]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('imgmode-ai').style.display  = b.dataset.imgtab === 'ai'  ? '' : 'none';
+    document.getElementById('imgmode-url').style.display = b.dataset.imgtab === 'url' ? '' : 'none';
+  };
+});
+
+function setLaunchImagePreview(url) {
+  const wrap = document.getElementById('lImgPreview');
+  const box  = document.getElementById('lImgPreviewBox');
+  const hidden = document.getElementById('lImg');
+  if (!url) { wrap.style.display = 'none'; hidden.value = ''; return; }
+  box.style.backgroundImage = `url('${url.replace(/'/g, '%27')}')`;
+  wrap.style.display = '';
+  hidden.value = url;
+}
+
+document.getElementById('lImgUrl').oninput = (e) => {
+  setLaunchImagePreview(e.target.value.trim());
+};
+
+document.getElementById('lImgGen').onclick = (e) => {
+  e.preventDefault();
+  const prompt = document.getElementById('lImgPrompt').value.trim()
+    || (document.getElementById('lName').value.trim() + ' meme coin neon')
+    || 'memecoin rocket cyan';
+  // random seed so successive clicks roll different images
+  const seed = Math.floor(Math.random() * 1000000);
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&seed=${seed}&nologo=true`;
+  setLaunchImagePreview(url);
+};
+
 // ---------- wallet ----------
 // EIP-6963 multi-wallet discovery: enumerate all installed wallets so the
 // user can pick (instead of hoping whichever wallet won the window.ethereum
@@ -1743,6 +1802,9 @@ async function launchCoin() {
     document.getElementById('lName').value = '';
     document.getElementById('lSym').value = '';
     document.getElementById('lImg').value = '';
+    document.getElementById('lImgUrl').value = '';
+    document.getElementById('lImgPrompt').value = '';
+    document.getElementById('lImgPreview').style.display = 'none';
     document.getElementById('lDesc').value = '';
     document.getElementById('lDevBuy').value = '';
     location.hash = '#/';
