@@ -13,18 +13,19 @@
 <meta property="og:title" content="KAS BLAST — Launch & Trade Memecoins on Kaspa" />
 <meta property="og:description" content="First memecoin launchpad on Kasplex L2. Bonding curves, atomic dev-buys, LP burned forever on graduation. No rugs, no admin keys." />
 <meta property="og:url" content="https://kasblast.com" />
-<meta property="og:image" content="https://image.pollinations.ai/prompt/KAS%20BLAST%20cyan%20neon%20rocket%20memecoin%20launchpad%20banner%20vaporwave%20kaspa?width=1200&height=630&seed=42&nologo=true" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
+<meta property="og:image" content="https://kasblast.com/logo.png" />
+<meta property="og:image:width" content="1024" />
+<meta property="og:image:height" content="1024" />
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="KAS BLAST — Launch & Trade Memecoins on Kaspa" />
 <meta name="twitter:description" content="First memecoin launchpad on Kasplex L2. Bonding curves. LP burned forever. No rugs." />
-<meta name="twitter:image" content="https://image.pollinations.ai/prompt/KAS%20BLAST%20cyan%20neon%20rocket%20memecoin%20launchpad%20banner%20vaporwave%20kaspa?width=1200&height=630&seed=42&nologo=true" />
+<meta name="twitter:image" content="https://kasblast.com/logo.png" />
 
-<!-- Favicon: tiny inline SVG so no extra file needed -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2306b6d4'/%3E%3Ctext x='50%25' y='50%25' dy='.35em' text-anchor='middle' font-family='Inter,sans-serif' font-weight='900' font-size='38' fill='%2306070d'%3EK%3C/text%3E%3C/svg%3E" />
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="/logo-icon.png" />
+<link rel="apple-touch-icon" href="/logo-icon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -248,23 +249,11 @@
     letter-spacing: -0.02em;
   }
   .logo-mark {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, var(--cyan-bright), var(--cyan-2) 60%, transparent 70%);
-    box-shadow: 0 0 18px var(--cyan-glow), 0 0 36px rgba(192,132,252,0.2);
-    position: relative;
-  }
-  .logo-mark::after {
-    content: 'K';
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #06070d;
-    font-weight: 900;
-    font-size: 16px;
+    object-fit: cover;
+    box-shadow: 0 0 18px var(--cyan-glow), 0 0 36px rgba(192,132,252,0.25);
   }
   .logo-text { color: var(--text); }
   .logo-dot { color: var(--cyan); }
@@ -952,7 +941,7 @@
   <!-- ============ SIDEBAR ============ -->
   <aside class="sidebar">
     <div class="logo">
-      <div class="logo-mark"></div>
+      <img src="/logo-icon.png" alt="KAS BLAST" class="logo-mark" />
       <div><span class="logo-text">KAS </span><span class="logo-dot">BLAST</span></div>
     </div>
 
