@@ -2089,10 +2089,15 @@ async function startLiveFeed() {
   }
   const curveAddrs = allCoins.map(c => c.curve);
 
-  // Backfill last ~10000 blocks
+  // Compute fromBlock: oldest interesting block is the earliest coin's launch.
+  // Kasplex L2 mines ~1 block/sec, so seconds-ago ≈ blocks-ago. Cap at 500k
+  // blocks (~5.8 days) to keep RPC responses bounded as the chain grows.
   status.textContent = 'fetching recent trades…';
   const latest = await ro.getBlockNumber();
-  const fromBlock = Math.max(0, latest - 10000);
+  const nowSec = Math.floor(Date.now() / 1000);
+  const oldestCoinAge = nowSec - Math.min(...allCoins.map(c => c.createdAt));
+  const blocksBack = Math.min(Math.max(oldestCoinAge + 60, 10_000), 500_000);
+  const fromBlock = Math.max(0, latest - blocksBack);
   liveLastBlock = latest;
   try {
     const buyTopic  = ethers.id('Buy(address,uint256,uint256,uint256)');
@@ -2187,7 +2192,7 @@ function renderLiveFeed() {
   const feed = document.getElementById('liveFeed');
   if (!feed) return;
   if (liveRows.length === 0) {
-    feed.innerHTML = '<div class="empty" style="border:none;">no trades in the last 10000 blocks</div>';
+    feed.innerHTML = '<div class="empty" style="border:none;">no trades yet — be the first to buy a coin from the home feed</div>';
     return;
   }
   feed.innerHTML = '';
