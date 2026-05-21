@@ -101,9 +101,129 @@
     grid-template-columns: 240px 1fr;
     min-height: 100vh;
   }
+
+  /* ============ MOBILE BOTTOM TABS (hidden on desktop) ============ */
+  .mobile-tabs { display: none; }
+
+  /* ============ MOBILE OVERHAUL ============ */
   @media (max-width: 800px) {
+    /* Layout */
     .app { grid-template-columns: 1fr; }
-    .sidebar { display: none; }
+    .sidebar { display: none !important; }
+    .content {
+      padding: 14px 14px max(80px, calc(70px + env(safe-area-inset-bottom)));
+    }
+
+    /* Compact top bar */
+    .topbar {
+      padding: 10px 14px;
+      gap: 8px;
+    }
+    .topbar .pill { display: none; }
+    .topbar-spacer { display: none; }
+    .search-wrap { max-width: none; flex: 1; }
+    .search-wrap input { padding: 9px 12px 9px 36px; font-size: 13px; }
+    .search-wrap svg { left: 12px; width: 14px; height: 14px; }
+    .btn.ghost { padding: 9px 14px; font-size: 13px; }
+
+    /* Tighter hero */
+    .hero { padding: 16px 0 14px; }
+    .hero h1 { font-size: clamp(34px, 11vw, 56px); letter-spacing: -0.035em; }
+    .hero p { font-size: 13px; margin-top: 12px; padding: 0 4px; }
+    .hero-cta-row { flex-direction: column; gap: 8px; margin-top: 16px; }
+    .hero-cta-row .btn { width: 100%; justify-content: center; padding: 12px 16px; }
+
+    /* Single column coin grid, full-width cards */
+    .grid { grid-template-columns: 1fr; gap: 10px; }
+    .coin { padding: 12px; display: grid; grid-template-columns: 88px 1fr; gap: 12px; }
+    .coin .img { width: 88px; height: 88px; aspect-ratio: auto; margin-bottom: 0; }
+    .coin .name { font-size: 16px; }
+    .coin .sym { font-size: 13px; }
+    .coin .desc { max-height: 32px; -webkit-line-clamp: 2; }
+    .coin .progress-wrap, .coin .coin-progress-pct, .coin .vol-badge {
+      grid-column: 1 / -1;
+    }
+
+    /* Section header tweaks */
+    .section-head { flex-wrap: wrap; gap: 8px; }
+    .section-head h3 { font-size: 12px; }
+    .section-head .sortBtn { font-size: 11px; padding: 5px 10px; }
+
+    /* Coin detail: stack everything, smaller chart, sticky trade rail */
+    .coin-layout { grid-template-columns: 1fr; gap: 12px; }
+    .coin-header { gap: 12px; margin-bottom: 14px; }
+    .coin-header .big-img { width: 64px; height: 64px; }
+    .coin-header h2 { font-size: 20px; }
+    .mcap-row { padding: 14px 16px; gap: 14px; }
+    .mcap-row .mcap-value { font-size: 24px; }
+    #chartWrap { height: 220px; }
+    .chart-tabs { padding: 8px 10px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* Trade rail becomes a sticky bottom drawer on mobile */
+    .trade-rail {
+      position: fixed;
+      left: 0; right: 0;
+      bottom: 0;
+      border-radius: 18px 18px 0 0;
+      padding: 14px 16px max(16px, calc(14px + env(safe-area-inset-bottom)));
+      z-index: 80;
+      box-shadow: 0 -12px 40px -8px rgba(0,0,0,0.6);
+      border-bottom: none;
+    }
+    /* Add bottom margin to coin content so trade rail doesn't cover the stats */
+    #view-coin .coin-layout > div:first-child { margin-bottom: 320px; }
+
+    .trade-tabs .tab { padding: 11px; font-size: 14px; }
+    .amount-display input { font-size: 28px; }
+    .presets button { padding: 10px 6px; font-size: 13px; }
+    .addr-row { display: none; }  /* hide curve contract on mobile rail — it's in the stat cards above */
+
+    /* Bigger touch targets for trade buttons */
+    .btn.full { padding: 13px 18px; font-size: 15px; font-weight: 700; }
+
+    /* Card padding tighter */
+    .card { padding: 16px; }
+    .field { margin-bottom: 12px; }
+    input, textarea { padding: 12px 13px; font-size: 16px; /* 16px prevents iOS zoom */ }
+
+    /* Live trades feed: bigger touch rows */
+    .trade-row { grid-template-columns: 14px 1fr auto 70px; padding: 12px 14px; font-size: 13px; gap: 10px; }
+    .trade-row .when { font-size: 10px; }
+
+    /* ===== Bottom tab bar ===== */
+    .mobile-tabs {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(6, 7, 13, 0.92);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--line);
+      z-index: 100;
+      padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+    }
+    .mobile-tabs a {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px 4px;
+      color: var(--text-dim);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .mobile-tabs a svg { width: 22px; height: 22px; }
+    .mobile-tabs a.active { color: var(--cyan); }
+    .mobile-tabs a:active { background: rgba(103, 232, 249, 0.08); }
+
+    /* Hide bottom tabs when on coin detail — trade rail is the focus there */
+    body.on-coin .mobile-tabs { display: none; }
+    body.on-coin .content { padding-bottom: 0; }
   }
 
   /* Sidebar */
@@ -1094,6 +1214,26 @@
   </div>
 </div>
 
+<!-- Mobile bottom tab bar (hidden on desktop) -->
+<nav class="mobile-tabs">
+  <a href="#/" data-mview="home" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12L12 4l9 8M5 10v10h14V10"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="#/launch" data-mview="launch">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    <span>Launch</span>
+  </a>
+  <a href="#/live" data-mview="live">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M5 12a7 7 0 0114 0M2 12a10 10 0 0120 0"/></svg>
+    <span>Live</span>
+  </a>
+  <a href="#/settings" data-mview="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.3l2-1.5-2-3.5-2.4 1a7 7 0 00-2.2-1.3l-.4-2.5h-4l-.4 2.5a7 7 0 00-2.2 1.3l-2.4-1-2 3.5 2 1.5A7 7 0 005 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.5 2.4-1a7 7 0 002.2 1.3l.4 2.5h4l.4-2.5a7 7 0 002.2-1.3l2.4 1 2-3.5-2-1.5A7 7 0 0019 12z"/></svg>
+    <span>Settings</span>
+  </a>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script>
@@ -1211,6 +1351,11 @@ function showView(name) {
   document.querySelectorAll('.nav a').forEach(a => {
     a.classList.toggle('active', a.dataset.view === name);
   });
+  document.querySelectorAll('.mobile-tabs a').forEach(a => {
+    a.classList.toggle('active', a.dataset.mview === name);
+  });
+  // body class controls whether mobile bottom tabs hide on coin detail
+  document.body.classList.toggle('on-coin', name === 'coin');
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
@@ -1240,7 +1385,7 @@ document.getElementById('factoryAddr').value = settings.factory || '';
 document.getElementById('rpcUrl').value = settings.rpc;
 document.getElementById('chainId').value = settings.chainId;
 
-document.querySelectorAll('.nav a').forEach(a => {
+document.querySelectorAll('.nav a, .mobile-tabs a').forEach(a => {
   a.addEventListener('click', () => {
     setTimeout(route, 0);
   });
