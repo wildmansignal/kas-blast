@@ -796,6 +796,24 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
+  /* Social link pills */
+  .social-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .social-row a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-mid);
+    transition: all .15s;
+  }
+  .social-row a:hover { border-color: var(--cyan-2); color: var(--cyan); background: var(--cyan-soft); }
+  .coin .social-row { grid-column: 1 / -1; margin-top: 8px; }
+  .coin .social-row a { padding: 3px 8px; font-size: 11px; }
+
   /* Trade rail */
   .trade-rail {
     background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
@@ -1068,6 +1086,13 @@
               <textarea id="lDesc" rows="3" placeholder="The chaddest frog on Kaspa."></textarea>
             </div>
             <div class="field">
+              <label>Socials (all optional)</label>
+              <input id="lTwitter" placeholder="🐦 Twitter / X URL" style="margin-bottom:8px;"/>
+              <input id="lTelegram" placeholder="✈️ Telegram URL" style="margin-bottom:8px;"/>
+              <input id="lWebsite" placeholder="🌐 Website URL" style="margin-bottom:8px;"/>
+              <input id="lDiscord" placeholder="💬 Discord URL"/>
+            </div>
+            <div class="field">
               <label>Dev buy (optional, KAS) — atomic, at opening price</label>
               <input id="lDevBuy" type="number" step="0.01" min="0" placeholder="0" class="mono"/>
             </div>
@@ -1132,6 +1157,7 @@
               <span class="badge">Bonding Curve</span>
             </div>
             <div class="desc" id="mDesc"></div>
+            <div class="social-row" id="mSocials"></div>
           </div>
         </div>
 
@@ -1254,12 +1280,12 @@
 //  KAS BLAST cockpit — pump.fun-on-Kasplex
 // ============================================================
 
-const STORAGE_KEY = 'kas-blast-settings-v1';
+const STORAGE_KEY = 'kas-blast-settings-v2';
 // LIVE on Kasplex L2 mainnet.
-// Factory deployed 2026-05-20 at 0xff5A8D…D9fAB.
+// Factory v2 (with social links) deployed 2026-05-21 at 0x57486Dde…F055.
 // To switch to localhost/testnet, open Settings tab in the UI.
 const defaultSettings = {
-  factory: '0xff5A8D53fF7518fD0Dc3582b2FE1FeF8FDCF9fAB',
+  factory: '0x57486Dde9A6A3F8F32805BBFA0df3bFb3b09F055',
   rpc: 'https://evmrpc.kasplex.org',
   chainId: 202555,
 };
@@ -1267,7 +1293,7 @@ const defaultSettings = {
 const FACTORY_ABI = [
   'function coinsLength() view returns (uint256)',
   'function recentCoins(uint256 offset, uint256 limit) view returns (tuple(address token,address curve,address creator,uint64 createdAt)[])',
-  'function launch(string name_, string symbol_, string imageUri_, string description_) payable returns (address,address)',
+  'function launch((string name, string symbol, string imageUri, string description, string twitter, string telegram, string website, string discord) p) payable returns (address,address)',
   'function LAUNCH_FEE() view returns (uint256)',
   'event CoinLaunched(address indexed token,address indexed curve,address indexed creator,string name,string symbol,string imageUri,string description)',
 ];
@@ -1293,6 +1319,10 @@ const TOKEN_ABI = [
   'function symbol() view returns (string)',
   'function imageUri() view returns (string)',
   'function description() view returns (string)',
+  'function twitter() view returns (string)',
+  'function telegram() view returns (string)',
+  'function website() view returns (string)',
+  'function discord() view returns (string)',
   'function decimals() view returns (uint8)',
   'function balanceOf(address) view returns (uint256)',
   'function allowance(address,address) view returns (uint256)',
@@ -1344,6 +1374,19 @@ function short(addr) {
 function toEther(wei) { return Number(ethers.formatEther(wei)); }
 function escapeText(s) { return String(s || '').replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])); }
 function escapeAttr(s) { return escapeText(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+
+function socialLinksHtml(coin) {
+  const links = [
+    { url: coin.twitter,  label: '🐦 Twitter' },
+    { url: coin.telegram, label: '✈️ Telegram' },
+    { url: coin.website,  label: '🌐 Website' },
+    { url: coin.discord,  label: '💬 Discord' },
+  ];
+  return links
+    .filter(l => l.url && /^https?:\/\//i.test(l.url))
+    .map(l => `<a href="${escapeAttr(l.url)}" target="_blank" rel="noopener nofollow">${l.label}</a>`)
+    .join('');
+}
 
 async function copyToClipboard(el, text) {
   try {
@@ -1652,17 +1695,19 @@ async function enrichCoin(c) {
   try {
     const tokenC = new ethers.Contract(c.token, TOKEN_ABI, ro);
     const curveC = new ethers.Contract(c.curve, CURVE_ABI, ro);
-    const [name, sym, img, desc, progress] = await Promise.all([
-      tokenC.name(), tokenC.symbol(), tokenC.imageUri(), tokenC.description(), curveC.progressBps()
+    const [name, sym, img, desc, progress, twitter, telegram, website, discord] = await Promise.all([
+      tokenC.name(), tokenC.symbol(), tokenC.imageUri(), tokenC.description(), curveC.progressBps(),
+      tokenC.twitter(), tokenC.telegram(), tokenC.website(), tokenC.discord()
     ]);
     return {
       token: c.token, curve: c.curve, creator: c.creator,
       createdAt: Number(c.createdAt),
       name, symbol: sym, imageUri: img, description: desc,
+      twitter, telegram, website, discord,
       progress: Number(progress),
       vol24h: 0, // backfilled below if user clicks Volume sort
     };
-  } catch { return { token: c.token, curve: c.curve, creator: c.creator, name: '?', symbol: '?', imageUri: '', description: '', progress: 0, vol24h: 0 }; }
+  } catch { return { token: c.token, curve: c.curve, creator: c.creator, name: '?', symbol: '?', imageUri: '', description: '', twitter: '', telegram: '', website: '', discord: '', progress: 0, vol24h: 0 }; }
 }
 
 /// Computes 24h KAS volume per coin by querying Buy + Sell event logs across all curves
@@ -1725,11 +1770,15 @@ function coinCard(c) {
     <div class="name">${escapeText(c.name)}</div>
     <div class="sym">$${escapeText(c.symbol)}</div>
     <div class="desc">${escapeText(c.description)}</div>
+    ${socialLinksHtml(c) ? `<div class="social-row">${socialLinksHtml(c)}</div>` : ''}
     ${volBadge}
     <div class="progress-wrap"><div class="progress" style="width:${c.progress/100}%"></div></div>
     <div class="coin-progress-pct"><span>graduation</span><span class="v">${(c.progress/100).toFixed(1)}%</span></div>
   `;
-  el.onclick = () => { location.hash = '#/coin/' + c.curve; };
+  el.onclick = (e) => {
+    if (e.target.closest('a')) return; // let social links open normally
+    location.hash = '#/coin/' + c.curve;
+  };
   return el;
 }
 
@@ -1786,7 +1835,13 @@ async function launchCoin() {
     const devBuyKas = parseFloat(document.getElementById('lDevBuy').value) || 0;
     const value = devBuyKas > 0 ? fee + ethers.parseEther(String(devBuyKas)) : fee;
     toast('Launching ' + sym + (devBuyKas > 0 ? ' + ' + devBuyKas + ' KAS dev buy' : '') + '… check wallet');
-    const tx = await f.launch(name, sym, img, desc, { value });
+    const tx = await f.launch({
+      name, symbol: sym, imageUri: img, description: desc,
+      twitter:  document.getElementById('lTwitter').value.trim(),
+      telegram: document.getElementById('lTelegram').value.trim(),
+      website:  document.getElementById('lWebsite').value.trim(),
+      discord:  document.getElementById('lDiscord').value.trim(),
+    }, { value });
     const rcpt = await tx.wait();
     toast('✓ Launched in block ' + rcpt.blockNumber);
     document.getElementById('lName').value = '';
@@ -1796,6 +1851,10 @@ async function launchCoin() {
     document.getElementById('lImgPrompt').value = '';
     document.getElementById('lImgPreview').style.display = 'none';
     document.getElementById('lDesc').value = '';
+    document.getElementById('lTwitter').value = '';
+    document.getElementById('lTelegram').value = '';
+    document.getElementById('lWebsite').value = '';
+    document.getElementById('lDiscord').value = '';
     document.getElementById('lDevBuy').value = '';
     location.hash = '#/';
     loadCoins();
@@ -1818,10 +1877,11 @@ async function openCoinByAddress(curveAddr) {
         const curveC = new ethers.Contract(curveAddr, CURVE_ABI, ro);
         const tokenAddr = await curveC.token();
         const tokenC = new ethers.Contract(tokenAddr, TOKEN_ABI, ro);
-        const [name, sym, img, desc, progress] = await Promise.all([
-          tokenC.name(), tokenC.symbol(), tokenC.imageUri(), tokenC.description(), curveC.progressBps()
+        const [name, sym, img, desc, progress, twitter, telegram, website, discord] = await Promise.all([
+          tokenC.name(), tokenC.symbol(), tokenC.imageUri(), tokenC.description(), curveC.progressBps(),
+          tokenC.twitter(), tokenC.telegram(), tokenC.website(), tokenC.discord()
         ]);
-        c = { token: tokenAddr, curve: curveAddr, name, symbol: sym, imageUri: img, description: desc, progress: Number(progress) };
+        c = { token: tokenAddr, curve: curveAddr, name, symbol: sym, imageUri: img, description: desc, twitter, telegram, website, discord, progress: Number(progress) };
       } catch (e) { toast('Coin not found: ' + e.message, true); return; }
     }
   }
@@ -1838,6 +1898,7 @@ async function openTrade(coin) {
   document.getElementById('mName').textContent = coin.name;
   document.getElementById('mSym').textContent = '$' + coin.symbol;
   document.getElementById('mDesc').textContent = coin.description;
+  document.getElementById('mSocials').innerHTML = socialLinksHtml(coin);
 
   // Address stat cards: display truncated but copy full
   const curveEl = document.getElementById('mCurve');

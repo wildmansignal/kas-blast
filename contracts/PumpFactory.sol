@@ -58,13 +58,22 @@ contract PumpFactory {
         return coins.length;
     }
 
+    struct LaunchParams {
+        string name;
+        string symbol;
+        string imageUri;
+        string description;
+        string twitter;
+        string telegram;
+        string website;
+        string discord;
+    }
+
     /// @notice Launch a new meme coin. Caller pays LAUNCH_FEE in KAS.
-    function launch(
-        string calldata name_,
-        string calldata symbol_,
-        string calldata imageUri_,
-        string calldata description_
-    ) external payable returns (address tokenAddr, address curveAddr) {
+    ///         Social fields are all optional — pass empty strings to omit.
+    function launch(LaunchParams calldata p)
+        external payable returns (address tokenAddr, address curveAddr)
+    {
         require(msg.value >= LAUNCH_FEE, "launch fee");
 
         // 1. Deploy curve (without knowing token address yet)
@@ -83,10 +92,16 @@ contract PumpFactory {
 
         // 2. Deploy token, minting full supply to curve
         MemeToken token = new MemeToken(
-            name_,
-            symbol_,
-            imageUri_,
-            description_,
+            p.name,
+            p.symbol,
+            MemeToken.Meta({
+                imageUri: p.imageUri,
+                description: p.description,
+                twitter: p.twitter,
+                telegram: p.telegram,
+                website: p.website,
+                discord: p.discord
+            }),
             msg.sender,
             address(curve),
             TOKEN_TOTAL_SUPPLY
@@ -115,7 +130,7 @@ contract PumpFactory {
             curve.buyFor{value: devBuyValue}(msg.sender, 0);
         }
 
-        emit CoinLaunched(address(token), address(curve), msg.sender, name_, symbol_, imageUri_, description_);
+        emit CoinLaunched(address(token), address(curve), msg.sender, p.name, p.symbol, p.imageUri, p.description);
         return (address(token), address(curve));
     }
 
