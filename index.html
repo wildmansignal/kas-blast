@@ -1405,7 +1405,11 @@ async function updateBal() {
 function bootRead() {
   if (!settings.factory) return;
   try {
-    readProvider = new ethers.JsonRpcProvider(settings.rpc, settings.chainId);
+    // staticNetwork tells ethers: "trust me, this is the chain — don't verify."
+    // Without it, ethers fires an extra eth_chainId before every first call,
+    // which races the CORS preflight on cold loads and dies with "Failed to fetch."
+    const net = new ethers.Network('Kasplex L2', settings.chainId);
+    readProvider = new ethers.JsonRpcProvider(settings.rpc, net, { staticNetwork: net });
     factory = factory || new ethers.Contract(settings.factory, FACTORY_ABI, readProvider);
     document.getElementById('sFactory').textContent = short(settings.factory);
   } catch (e) {
@@ -1413,7 +1417,7 @@ function bootRead() {
   }
 }
 
-async function loadCoins() {
+async function loadCoins(attempt = 0) {
   const grid = document.getElementById('coinGrid');
   if (!settings.factory) {
     grid.innerHTML = '<div class="empty">No factory configured. Open <a href="#/settings">Settings</a> and add factory address.</div>';
@@ -1434,7 +1438,17 @@ async function loadCoins() {
     allCoins = enriched.filter(Boolean);
     applySort();
   } catch (e) {
-    grid.innerHTML = '<div class="empty">Failed to load coins: ' + e.message + '</div>';
+    // Cold-load races (CORS preflight, slow TLS, etc) usually self-heal on retry.
+    // Auto-retry twice with backoff before showing the error to the user.
+    if (attempt < 2) {
+      grid.innerHTML = '<div class="empty">Loading coins…</div>';
+      await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+      return loadCoins(attempt + 1);
+    }
+    grid.innerHTML = `<div class="empty">
+      Couldn't reach Kasplex RPC: ${escapeText(e.message)}<br/><br/>
+      <button class="btn" onclick="loadCoins()">↻ Retry</button>
+    </div>`;
   }
 }
 
